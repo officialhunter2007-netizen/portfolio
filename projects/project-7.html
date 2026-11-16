@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project 7: GitOps on Kubernetes with EKS Fargate and ArgoCD | Amr</title>
+<meta name="description" content="Case study: a two-repo GitOps pipeline on AWS. GitHub Actions pushes images to ECR and commits the new tag; ArgoCD syncs an EKS Fargate cluster. Terraform, HPA, ALB Ingress, IRSA.">
+<meta property="og:title" content="Project 7: GitOps on Kubernetes with EKS Fargate and ArgoCD">
+<meta property="og:type" content="article">
+<meta name="theme-color" content="#090d18">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="nav">
+  <div class="container">
+    <a class="brand" href="../index.html"><span class="logo">A</span> Amr Khaled</a>
+    <button class="menu-btn" aria-expanded="false" aria-controls="nav-list">Menu</button>
+    <nav aria-label="Primary">
+      <ul id="nav-list">
+        <li><a href="../index.html#work">Projects</a></li>
+        <li><a href="../index.html#skills">Skills</a></li>
+        <li><a href="../index.html#journey">Journey</a></li>
+        <li><a href="../index.html#contact">Contact</a></li>
+        <li><a class="btn small" href="https://github.com/officialhunter2007-netizen">GitHub</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="page container">
+  <p class="crumbs"><a href="../index.html#work">Projects</a> / Project 07</p>
+  <div class="page-hero">
+    <h1>GitOps on Kubernetes with EKS Fargate and ArgoCD</h1>
+    <p class="lead">The pipeline never touches the cluster. It builds an image and commits the new tag to Git; ArgoCD notices and makes the cluster match.</p>
+    <ul class="tags"><li class="tag">EKS</li><li class="tag">Fargate</li><li class="tag">ArgoCD</li><li class="tag">Terraform</li><li class="tag">GitHub Actions</li><li class="tag">HPA</li><li class="tag">ALB Ingress</li><li class="tag">IRSA</li></ul>
+    <dl class="meta">
+      <div><dt>Built</dt><dd>September 2026</dd></div>
+      <div><dt>Region</dt><dd>eu-west-1</dd></div>
+      <div><dt>App repo</dt><dd><a href="https://github.com/officialhunter2007-netizen/project-7-app">project-7-app</a></dd></div>
+      <div><dt>GitOps repo</dt><dd><a href="https://github.com/officialhunter2007-netizen/project-7-gitops">project-7-gitops</a></dd></div>
+    </dl>
+  </div>
+
+  <div class="prose">
+    <h2>The problem</h2>
+    <p>In <a href="project-6.html">Project 6</a> the pipeline pushed straight to ECS. That works for one service, but every extra service needs its own task definition, ECS service, target group and listener rule, and the pipeline holds the power to change production. I wanted one API for many workloads, and Git, not a CI job, to be the record of what runs.</p>
+
+    <h2>Architecture</h2>
+    <figure class="figure">
+      <svg class="diagram" viewBox="0 0 1000 540" role="img" aria-labelledby="d7t">
+        <title id="d7t">Architecture of Project 7: GitHub Actions pushes an image to ECR and commits the tag to the GitOps repository; ArgoCD in the EKS cluster syncs the production namespace; an ALB created by the AWS Load Balancer Controller routes to Fargate pods.</title>
+        <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#5b72a8"/></marker></defs>
+        <rect class="bx" x="10" y="25" width="110" height="56"/><text x="65" y="50" text-anchor="middle">Developer</text><text class="s" x="65" y="68" text-anchor="middle">git push</text>
+        <path class="ln" d="M120 53H160"/>
+        <rect class="bx b" x="160" y="25" width="150" height="56"/><text x="235" y="50" text-anchor="middle">project-7-app</text><text class="s" x="235" y="68" text-anchor="middle">GitHub repo</text>
+        <path class="ln" d="M310 53H350"/>
+        <rect class="bx w" x="350" y="15" width="230" height="76"/><text x="465" y="40" text-anchor="middle">GitHub Actions</text><text class="s" x="465" y="60" text-anchor="middle">OIDC auth · docker build · push</text><text class="s" x="465" y="77" text-anchor="middle">commit new image tag</text>
+        <path class="ln" d="M580 40H640"/>
+        <rect class="bx g" x="640" y="15" width="190" height="56"/><text x="735" y="40" text-anchor="middle">Amazon ECR</text><text class="s" x="735" y="58" text-anchor="middle">immutable tags, scan on push</text>
+        <path class="ln" d="M580 70H610V128H640"/>
+        <rect class="bx b" x="640" y="100" width="190" height="56"/><text x="735" y="125" text-anchor="middle">project-7-gitops</text><text class="s" x="735" y="143" text-anchor="middle">k8s manifests + Terraform</text>
+        <path class="ln d" d="M640 140H270V215"/><text class="s" x="440" y="134" text-anchor="middle">ArgoCD watches k8s/production</text>
+
+        <rect class="zone" x="140" y="180" width="850" height="345"/><text class="z" x="985" y="198" text-anchor="end">EKS cluster · Fargate · eu-west-1</text>
+        <rect class="bx g" x="160" y="215" width="220" height="66"/><text x="270" y="243" text-anchor="middle">ArgoCD</text><text class="s" x="270" y="263" text-anchor="middle">auto-sync · prune · self-heal</text>
+        <rect class="bx" x="160" y="305" width="220" height="56"/><text x="270" y="330" text-anchor="middle">AWS LB Controller</text><text class="s" x="270" y="348" text-anchor="middle">kube-system · IRSA</text>
+        <path class="ln" d="M270 361V400"/><text class="s" x="282" y="385">provisions</text>
+        <rect class="bx a" x="160" y="400" width="220" height="56"/><text x="270" y="425" text-anchor="middle">Application Load Balancer</text><text class="s" x="270" y="443" text-anchor="middle">public subnets · internet-facing</text>
+        <rect class="bx" x="10" y="400" width="110" height="56"/><text x="65" y="425" text-anchor="middle">Internet</text><text class="s" x="65" y="443" text-anchor="middle">HTTP :80</text>
+        <path class="ln" d="M120 428H160"/>
+        <path class="ln" d="M380 248H410"/>
+
+        <rect class="zone s" x="410" y="205" width="570" height="300"/><text class="z" x="426" y="226">namespace: production</text>
+        <rect class="bx" x="430" y="240" width="120" height="50"/><text x="490" y="261" text-anchor="middle">Ingress</text><text class="s" x="490" y="278" text-anchor="middle">alb · ip target</text>
+        <path class="ln" d="M550 265H575"/>
+        <rect class="bx" x="575" y="240" width="120" height="50"/><text x="635" y="261" text-anchor="middle">Service</text><text class="s" x="635" y="278" text-anchor="middle">ClusterIP :80</text>
+        <rect class="bx" x="720" y="240" width="140" height="50"/><text x="790" y="261" text-anchor="middle">HPA</text><text class="s" x="790" y="278" text-anchor="middle">2–5 pods · 70% CPU</text>
+        <rect class="bx" x="875" y="240" width="95" height="50"/><text x="922" y="261" text-anchor="middle">ConfigMap</text><text class="s" x="922" y="278" text-anchor="middle">PORT</text>
+        <rect class="bx a" x="430" y="335" width="240" height="64"/><text x="550" y="361" text-anchor="middle">Deployment · flask-app</text><text class="s" x="550" y="381" text-anchor="middle">2 replicas · /live · /ready probes</text>
+        <path class="ln" d="M670 367H700"/>
+        <rect class="bx a" x="700" y="335" width="130" height="64"/><text x="765" y="361" text-anchor="middle">Pod 1</text><text class="s" x="765" y="381" text-anchor="middle">Fargate · :5000</text>
+        <rect class="bx a" x="845" y="335" width="125" height="64"/><text x="907" y="361" text-anchor="middle">Pod 2</text><text class="s" x="907" y="381" text-anchor="middle">Fargate · :5000</text>
+        <path class="ln" d="M635 290V312H765V335"/><path class="ln" d="M765 312H907V335"/>
+        <path class="ln" d="M380 428H765V399"/><path class="ln" d="M765 428H907V399"/><text class="s" x="560" y="446" text-anchor="middle">ALB targets pod IPs directly</text>
+      </svg>
+      <figcaption>Simplified from the Terraform and manifests in the two repositories.</figcaption>
+    </figure>
+
+    <p>Three systems each own one thing, so changes never mix:</p>
+    <ul>
+      <li><b>Terraform</b> owns AWS: VPC, EKS, three Fargate profiles, ECR, IAM, the load balancer controller policy.</li>
+      <li><b>GitHub Actions</b> owns the build: authenticate with OIDC, build the image, push it to ECR, commit the new tag.</li>
+      <li><b>ArgoCD</b> owns the cluster: it reconciles <span class="inline-code">k8s/production</span> against what is running.</li>
+    </ul>
+
+    <h2>How a change reaches the cluster</h2>
+    <ol>
+      <li>Push to <span class="inline-code">main</span> in <span class="inline-code">project-7-app</span>.</li>
+      <li>The workflow assumes an AWS role through GitHub OIDC, builds the image and pushes it to ECR tagged with <span class="inline-code">github.sha</span>.</li>
+      <li>It checks out <span class="inline-code">project-7-gitops</span>, rewrites the <span class="inline-code">image:</span> line in <span class="inline-code">deployment.yaml</span> and commits as the Actions bot.</li>
+      <li>ArgoCD sees the new commit and applies it. Kubernetes performs a rolling update.</li>
+    </ol>
+    <p>If the pipeline fails after pushing the image but before committing the tag, the cluster simply keeps running the previous version.</p>
+<pre class="code"><span class="c"># argocd-app.yaml</span>
+<span class="k">syncPolicy</span>:
+  <span class="k">automated</span>:
+    <span class="k">prune</span>: <span class="s">true</span>      <span class="c"># delete what is no longer in Git</span>
+    <span class="k">selfHeal</span>: <span class="s">true</span>   <span class="c"># revert manual drift in the cluster</span></pre>
+
+    <h2>Engineering decisions</h2>
+    <div class="decisions">
+      <div class="decision"><h3>EKS on Fargate instead of managed nodes</h3><p>Keeps the serverless cost and operations model from Project 6: no nodes to patch or size. Each pod gets its own Fargate instance and VPC IP. Cost: less control over the host, and every namespace that runs pods needs a Fargate profile.</p></div>
+      <div class="decision"><h3>Separate liveness and readiness probes</h3><p><span class="inline-code">/live</span> means "restart me if this fails"; <span class="inline-code">/ready</span> means "stop sending me traffic". The app returns 503 from <span class="inline-code">/ready</span> for its first 20 seconds, simulating start-up work, and the pytest suite asserts that behaviour. ECS had a single health check that always replaces the task.</p></div>
+      <div class="decision"><h3>ALB with <span class="inline-code">target-type: ip</span></h3><p>Fargate pods have no node IP to register, so the Ingress annotation makes the ALB target pod IPs directly.</p></div>
+      <div class="decision"><h3>IRSA for the load balancer controller</h3><p>The controller assumes an IAM role through the cluster's OIDC provider (trust scoped to <span class="inline-code">kube-system:aws-load-balancer-controller</span>), so no static credentials sit in a Kubernetes secret.</p></div>
+      <div class="decision"><h3>Immutable ECR tags, one tag per commit</h3><p>Every image is addressable by the commit that produced it, so rollback means reverting one commit in the GitOps repo.</p></div>
+      <div class="decision"><h3>HPA between 2 and 5 replicas at 70% CPU</h3><p>Declared in <span class="inline-code">hpa.yaml</span> with CPU requests and limits set on the container.</p></div>
+    </div>
+<pre class="code"><span class="c"># deployment.yaml (excerpt)</span>
+<span class="k">livenessProbe</span>:  { httpGet: { path: <span class="s">/live</span>,  port: 5000 }, periodSeconds: 10 }
+<span class="k">readinessProbe</span>: { httpGet: { path: <span class="s">/ready</span>, port: 5000 }, periodSeconds: 10 }</pre>
+
+    <h2>Issues I hit and fixed</h2>
+    <ul class="issues">
+      <li><h3>CoreDNS stuck in Pending</h3><p><b>Cause:</b> Fargate profiles covered <span class="inline-code">production</span> and <span class="inline-code">argocd</span> only, so nothing could schedule pods in <span class="inline-code">kube-system</span>; ArgoCD could not resolve its repo server.</p><p><b>Fix:</b> a third Fargate profile for <span class="inline-code">kube-system</span> (see <span class="inline-code">eks.tf</span>).</p></li>
+      <li><h3>Load balancer controller rejected my subnets</h3><p><b>Cause:</b> subnets were tagged for a cluster name that did not match the real cluster name.</p><p><b>Fix:</b> corrected the variable default to <span class="inline-code">project-7-eks-cluster</span> and re-applied so the <span class="inline-code">kubernetes.io/cluster/…</span> tags matched.</p></li>
+      <li><h3>ALB created, then reconciliation failed with AccessDenied</h3><p><b>Cause:</b> the published IAM policy lacked <span class="inline-code">elasticloadbalancing:DescribeListenerAttributes</span>, required by a newer controller version.</p><p><b>Fix:</b> added the action to <span class="inline-code">lbc-policy.json</span>.</p></li>
+      <li><h3>Docker build failing on a non-existent package version</h3><p><b>Cause:</b> <span class="inline-code">requirements.txt</span> pinned a Flask version that does not exist.</p><p><b>Fix:</b> pinned <span class="inline-code">flask==3.1.3</span>. The history below shows the failed runs before it went green.</p></li>
+    </ul>
+
+    <div class="ci">
+      <h3>Real pipeline history: project-7-app, 15 Sep 2026</h3>
+      <ol>
+        <li class="fail"><span class="dot"></span><time>11:23 UTC</time><span class="note">Add GitHub Actions pipeline · failed</span></li>
+        <li class="fail"><span class="dot"></span><time>11:35 UTC</time><span class="note">Failed</span></li>
+        <li class="fail"><span class="dot"></span><time>11:39 UTC</time><span class="note">Failed</span></li>
+        <li class="fail"><span class="dot"></span><time>12:05 UTC</time><span class="note">Failed</span></li>
+        <li class="fail"><span class="dot"></span><time>12:16 UTC</time><span class="note">Fix Flask version to 3.1.3 · failed</span></li>
+        <li class="pass"><span class="dot"></span><time>12:32 UTC</time><span class="note">Passed (50 s)</span></li>
+      </ol>
+      <p class="src">Source: GitHub Actions run list for project-7-app.</p>
+    </div>
+
+    <h2>Limitations and what I would do next</h2>
+    <div class="callout warn">
+      <p><b>Be clear about scope.</b> This is a self-directed lab, not a production system, and no live endpoint is published.</p>
+      <ul>
+        <li><b>CI is build-and-push only.</b> The repo has a pytest suite (4 tests) and a Flask app, but the workflow does not yet run lint, tests or an image scan. Wiring them in, with Trivy pinned to an immutable version, is the next step.</li>
+        <li><b>A personal access token</b> (<span class="inline-code">GITOPS_TOKEN</span>) lets the pipeline push to the GitOps repo. No static <em>AWS</em> keys are used, but I would replace the token with a GitHub App or a narrowly scoped deploy key.</li>
+        <li><b>HTTP only.</b> No TLS certificate or custom domain on the ALB.</li>
+        <li><b>Single environment.</b> One <span class="inline-code">production</span> namespace; no staging or promotion flow.</li>
+      </ul>
+    </div>
+
+    <p><a class="btn" href="https://github.com/officialhunter2007-netizen/project-7-gitops">GitOps repo</a> &nbsp; <a class="btn" href="https://github.com/officialhunter2007-netizen/project-7-app">App repo</a></p>
+  </div>
+
+  <nav class="pager" aria-label="Project navigation">
+    <a href="project-6.html"><small>← PREVIOUS</small>Project 6: Keyless CI/CD to ECS</a>
+    <a href="../index.html#work" style="text-align:right"><small>ALL PROJECTS →</small>Back to overview</a>
+  </nav>
+</main>
+
+<footer class="container">© <span id="year">2026</span> Amr Khaled Abdelmawla Ahmed</footer>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

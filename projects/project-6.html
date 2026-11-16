@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project 6: Keyless CI/CD to ECS Fargate with Terraform | Amr</title>
+<meta name="description" content="Case study: GitHub Actions pipeline using OIDC (no stored AWS keys) that lints, tests, scans and deploys a Flask container to ECS Fargate behind an ALB. All infrastructure in Terraform, with CloudWatch alarm and SNS email.">
+<meta property="og:title" content="Project 6: Keyless CI/CD to ECS Fargate with Terraform">
+<meta property="og:type" content="article">
+<meta name="theme-color" content="#090d18">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="nav">
+  <div class="container">
+    <a class="brand" href="../index.html"><span class="logo">A</span> Amr Khaled</a>
+    <button class="menu-btn" aria-expanded="false" aria-controls="nav-list">Menu</button>
+    <nav aria-label="Primary">
+      <ul id="nav-list">
+        <li><a href="../index.html#work">Projects</a></li>
+        <li><a href="../index.html#skills">Skills</a></li>
+        <li><a href="../index.html#journey">Journey</a></li>
+        <li><a href="../index.html#contact">Contact</a></li>
+        <li><a class="btn small" href="https://github.com/officialhunter2007-netizen">GitHub</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="page container">
+  <p class="crumbs"><a href="../index.html#work">Projects</a> / Project 06</p>
+  <div class="page-hero">
+    <h1>Keyless CI/CD to ECS Fargate</h1>
+    <p class="lead">Every push to <span class="inline-code">main</span> is linted, tested, scanned and deployed to ECS Fargate. GitHub authenticates to AWS with short-lived OIDC credentials, so there are no AWS keys stored anywhere.</p>
+    <ul class="tags"><li class="tag">ECS Fargate</li><li class="tag">Terraform</li><li class="tag">GitHub Actions</li><li class="tag">OIDC</li><li class="tag">Trivy</li><li class="tag">ALB</li><li class="tag">CloudWatch</li></ul>
+    <dl class="meta">
+      <div><dt>Built</dt><dd>August 2026</dd></div>
+      <div><dt>Region</dt><dd>eu-west-1</dd></div>
+      <div><dt>Stack</dt><dd>Python/Flask, Docker, Terraform</dd></div>
+      <div><dt>Repository</dt><dd><a href="https://github.com/officialhunter2007-netizen/project-6-gitops">project-6-gitops</a></dd></div>
+    </dl>
+  </div>
+
+  <div class="prose">
+    <h2>The problem</h2>
+    <p>My earlier projects were built by hand or from the CLI. I wanted the whole path from <span class="inline-code">git push</span> to a running container to be automatic, repeatable and safe: no manual steps, no long-lived credentials that could leak, and a way to find out when something breaks before users do.</p>
+
+    <h2>Architecture</h2>
+    <figure class="figure">
+      <svg class="diagram" viewBox="0 0 1000 470" role="img" aria-labelledby="d6t">
+        <title id="d6t">Architecture of Project 6: GitHub Actions authenticates to AWS with OIDC, pushes an image to ECR and deploys to ECS Fargate tasks in private subnets behind a public Application Load Balancer, with CloudWatch logs and an alarm that notifies through SNS email.</title>
+        <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#5b72a8"/></marker></defs>
+        <rect class="bx" x="10" y="20" width="100" height="56"/><text x="60" y="45" text-anchor="middle">Developer</text><text class="s" x="60" y="63" text-anchor="middle">git push</text>
+        <path class="ln" d="M110 48H140"/>
+        <rect class="bx b" x="140" y="20" width="130" height="56"/><text x="205" y="45" text-anchor="middle">GitHub repo</text><text class="s" x="205" y="63" text-anchor="middle">main branch</text>
+        <path class="ln" d="M270 48H300"/>
+        <rect class="bx w" x="300" y="10" width="300" height="70"/><text x="450" y="36" text-anchor="middle">GitHub Actions</text><text class="s" x="450" y="56" text-anchor="middle">flake8 → pytest → build → Trivy</text><text class="s" x="450" y="72" text-anchor="middle">→ push → deploy</text>
+        <path class="ln" d="M600 45H640"/><text class="s" x="620" y="36" text-anchor="middle">OIDC</text>
+        <rect class="bx" x="640" y="20" width="190" height="52"/><text x="735" y="42" text-anchor="middle">IAM role (OIDC trust)</text><text class="s" x="735" y="60" text-anchor="middle">temporary credentials</text>
+        <path class="ln" d="M520 80V168H780"/><text class="s" x="650" y="162" text-anchor="middle">push image</text>
+        <path class="ln d" d="M370 80V335H400"/><text class="s" x="378" y="110">rolling deploy</text>
+
+        <rect class="zone" x="10" y="110" width="980" height="350"/><text class="z" x="22" y="128">AWS · eu-west-1</text>
+        <rect class="zone s" x="30" y="135" width="720" height="315"/><text class="z" x="42" y="153">VPC 10.0.0.0/16</text>
+        <rect class="zone" x="45" y="160" width="690" height="85"/><text class="z" x="55" y="177">Public subnets (2 AZ)</text>
+        <rect class="bx" x="60" y="190" width="100" height="44"/><text x="110" y="216" text-anchor="middle">Internet</text>
+        <path class="ln" d="M160 212H180"/>
+        <rect class="bx a" x="180" y="190" width="170" height="44"/><text x="265" y="210" text-anchor="middle">Application LB</text><text class="s" x="265" y="226" text-anchor="middle">HTTP :80 · /health</text>
+        <rect class="bx" x="560" y="190" width="150" height="44"/><text x="635" y="210" text-anchor="middle">NAT gateway</text><text class="s" x="635" y="226" text-anchor="middle">one, shared</text>
+        <rect class="zone" x="45" y="265" width="690" height="170"/><text class="z" x="55" y="282">Private subnets (2 AZ)</text>
+        <rect class="bx a" x="170" y="305" width="170" height="60"/><text x="255" y="330" text-anchor="middle">Fargate task A</text><text class="s" x="255" y="348" text-anchor="middle">Flask + Gunicorn :5000</text>
+        <rect class="bx a" x="400" y="305" width="170" height="60"/><text x="485" y="330" text-anchor="middle">Fargate task B</text><text class="s" x="485" y="348" text-anchor="middle">Flask + Gunicorn :5000</text>
+        <text class="s" x="55" y="418">ECS security group: port 5000 from the ALB security group only · assign_public_ip = false</text>
+        <path class="ln" d="M265 234V305"/><path class="ln" d="M265 262H485V305"/><text class="s" x="283" y="298">health-checked</text>
+        <path class="ln d" d="M570 325H635V234"/><text class="s" x="645" y="300">outbound only</text>
+
+        <rect class="bx g" x="780" y="140" width="190" height="56"/><text x="875" y="164" text-anchor="middle">Amazon ECR</text><text class="s" x="875" y="182" text-anchor="middle">immutable tags · scan on push</text>
+        <path class="ln d" d="M780 175H762V350H570"/><text class="s" x="772" y="270" transform="rotate(-90 772 270)" text-anchor="middle">image pull</text>
+        <rect class="bx" x="780" y="225" width="190" height="52"/><text x="875" y="247" text-anchor="middle">CloudWatch alarm</text><text class="s" x="875" y="265" text-anchor="middle">UnHealthyHostCount &gt; 0</text>
+        <path class="ln" d="M875 277V295"/>
+        <rect class="bx" x="780" y="295" width="190" height="40"/><text x="875" y="320" text-anchor="middle">SNS → email</text>
+        <rect class="bx" x="780" y="365" width="190" height="52"/><text x="875" y="387" text-anchor="middle">CloudWatch Logs</text><text class="s" x="875" y="405" text-anchor="middle">/ecs/project-6 · 30 days</text>
+        <path class="ln" d="M570 391H780"/><text class="s" x="675" y="385" text-anchor="middle">stdout via awslogs</text>
+      </svg>
+      <figcaption>Simplified from the Terraform in <span class="inline-code">terraform/</span> and the workflow in <span class="inline-code">.github/workflows/deploy.yml</span>.</figcaption>
+    </figure>
+
+    <h2>The pipeline</h2>
+    <p>Every step runs on <span class="inline-code">ubuntu-latest</span>; any failure stops the run before anything reaches AWS production resources.</p>
+    <ol>
+      <li><b>Lint:</b> <span class="inline-code">flake8</span> on the app.</li>
+      <li><b>Test:</b> <span class="inline-code">pytest</span> against the Flask endpoints.</li>
+      <li><b>Authenticate:</b> <span class="inline-code">aws-actions/configure-aws-credentials</span> exchanges GitHub's signed OIDC token for temporary AWS credentials. No access keys exist in the repository or in GitHub secrets.</li>
+      <li><b>Build:</b> Docker image tagged with the commit SHA.</li>
+      <li><b>Scan:</b> Trivy fails the run on any <em>fixable</em> CRITICAL vulnerability, before the image is pushed.</li>
+      <li><b>Push:</b> the image goes to ECR, whose tags are immutable.</li>
+      <li><b>Deploy:</b> the current task definition is downloaded, the image is swapped in, a new revision is registered, and the service does a rolling update. The step waits for service stability.</li>
+    </ol>
+<pre class="code"><span class="c"># Trust policy condition (iam.tf): only this repository can assume the role</span>
+<span class="k">StringEquals</span>: token.actions.githubusercontent.com:aud = <span class="s">"sts.amazonaws.com"</span>
+<span class="k">StringLike</span>:   token.actions.githubusercontent.com:sub = <span class="s">"repo:&lt;owner&gt;@&lt;owner-id&gt;/project-6-gitops@&lt;repo-id&gt;:*"</span></pre>
+
+    <h2>Engineering decisions</h2>
+    <div class="decisions">
+      <div class="decision"><h3>OIDC instead of stored access keys</h3><p>A leaked long-lived key is a permanent breach. OIDC credentials are temporary and bound to one repository by the role's trust policy.</p></div>
+      <div class="decision"><h3>Least-privilege deploy role</h3><p>The pipeline role can push only to this ECR repository, update only this one ECS service, and pass only the task role. A few read and register actions (such as <span class="inline-code">ecs:RegisterTaskDefinition</span>) cannot be resource-scoped and use <span class="inline-code">*</span>.</p></div>
+      <div class="decision"><h3>Private tasks, layered network rules</h3><p>Tasks run in private subnets with no public IP. The ALB security group accepts ports 80 and 443 from anywhere; the ECS security group accepts port 5000 only from the ALB's security group.</p></div>
+      <div class="decision"><h3>Immutable ECR tags</h3><p>A tag can never be overwritten, so a bad build cannot replace the image you would roll back to. A lifecycle policy keeps the last 10 images.</p></div>
+      <div class="decision"><h3>One NAT gateway, on purpose</h3><p>One per AZ would be highly available; I chose one to keep cost down for a lab. If its AZ fails, tasks in the other AZ lose outbound internet. In a revenue-critical system I would add the second.</p></div>
+      <div class="decision"><h3>Terraform split by concern</h3><p>Nine files (<span class="inline-code">vpc</span>, <span class="inline-code">ecs</span>, <span class="inline-code">alb</span>, <span class="inline-code">iam</span>, <span class="inline-code">ecr</span>, <span class="inline-code">cloudwatch</span>…) so each change has one obvious home.</p></div>
+      <div class="decision"><h3>Alert before users notice</h3><p>The ALB checks <span class="inline-code">/health</span> every 30 s. A CloudWatch alarm on <span class="inline-code">UnHealthyHostCount &gt; 0</span> (60 s period) publishes to an SNS topic that emails me.</p></div>
+    </div>
+
+    <h2>Issues I hit and fixed</h2>
+    <ul class="issues">
+      <li><h3>OIDC role would not assume</h3><p><b>Cause:</b> GitHub's <span class="inline-code">sub</span> claim for newer repositories includes numeric owner and repository IDs, so my <span class="inline-code">repo:owner/repo:*</span> condition never matched.</p><p><b>How I found it:</b> added a debug step to decode the token's real claims.</p><p><b>Fix:</b> updated the trust policy condition to the numeric-ID format.</p></li>
+      <li><h3>Trivy blocked on vulnerabilities with no patch</h3><p><b>Cause:</b> critical CVEs in a base-image package had no fixed version available, so failing the build could not be acted on.</p><p><b>Fix:</b> added <span class="inline-code">--ignore-unfixed</span> so the gate fails only when a fix exists.</p></li>
+      <li><h3>Terraform artifacts committed to Git</h3><p><b>Cause:</b> no <span class="inline-code">.gitignore</span> before the first commit, so state and the provider binary were tracked (the provider far exceeds GitHub's file-size limit).</p><p><b>Fix:</b> rewrote history to remove them, added a proper <span class="inline-code">.gitignore</span>. Lesson: ignore first, and use remote state.</p></li>
+    </ul>
+
+    <div class="ci">
+      <h3>Real pipeline history: project-6-gitops, 15–17 Aug 2026</h3>
+      <ol>
+        <li class="fail"><span class="dot"></span><time>15 Aug 21:49</time><span class="note">Fix: Add .gitignore and remove Terraform artifacts from tracking</span></li>
+        <li class="fail"><span class="dot"></span><time>16 Aug 11:34</time><span class="note">Fix: Add required blank lines for PEP8 compliance (lint caught it)</span></li>
+        <li class="fail"><span class="dot"></span><time>16 Aug 14:12</time><span class="note">Debug: Print OIDC token claims</span></li>
+        <li class="fail"><span class="dot"></span><time>16 Aug 14:48</time><span class="note">Fix: Update OIDC sub claim to new GitHub format with numeric IDs</span></li>
+        <li class="fail"><span class="dot"></span><time>16 Aug 14:58</time><span class="note">Fix: Skip unfixed vulnerabilities in Trivy scan</span></li>
+        <li class="pass"><span class="dot"></span><time>16 Aug 15:01</time><span class="note">Fix: Correct Trivy command with ignore-unfixed flag</span></li>
+        <li class="pass"><span class="dot"></span><time>16 Aug 18:58</time><span class="note">Phase 6: Add basic tests</span></li>
+        <li class="pass"><span class="dot"></span><time>17 Aug 11:03</time><span class="note">Phase 6: Add CloudWatch alarm and SNS email notification</span></li>
+        <li class="pass"><span class="dot"></span><time>17 Aug 11:28</time><span class="note">Phase 6: Add Secrets Manager integration</span></li>
+        <li class="pass"><span class="dot"></span><time>17 Aug 12:20</time><span class="note">Create README.md</span></li>
+      </ol>
+      <p class="src">Source: GitHub Actions run list (times UTC). Labels are the commit messages.</p>
+    </div>
+
+    <h2>Limitations and what I would do next</h2>
+    <div class="callout warn">
+      <p><b>Scope.</b> This is a self-directed lab, not a production system, and no live endpoint is published.</p>
+      <ul>
+        <li><b>Local Terraform state.</b> No remote backend or locking yet; next step is an S3 backend with state locking.</li>
+        <li><b>HTTP only.</b> The ALB has a port-80 listener; adding ACM, a domain and an HTTPS listener is the next step.</li>
+        <li><b>Trivy runs from <span class="inline-code">aquasec/trivy:latest</span>.</b> I would pin it to a version or digest so the scanner itself is reproducible.</li>
+        <li><b>Secrets.</b> The task role can read one Secrets Manager path, but the task definition in Terraform does not yet inject a secret into the container.</li>
+        <li><b>One NAT gateway</b> (see decisions above).</li>
+      </ul>
+    </div>
+
+    <p><a class="btn" href="https://github.com/officialhunter2007-netizen/project-6-gitops">View the code</a></p>
+  </div>
+
+  <nav class="pager" aria-label="Project navigation">
+    <a href="project-5.html"><small>← PREVIOUS</small>Project 5: Multi-AZ web tier</a>
+    <a href="project-7.html" style="text-align:right"><small>NEXT →</small>Project 7: GitOps on EKS</a>
+  </nav>
+</main>
+
+<footer class="container">© <span id="year">2026</span> Amr Khaled Abdelmawla Ahmed</footer>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/main.js"></script>
+</body>
+</html>

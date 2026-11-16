@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project 3: Serverless Event-Driven API on AWS | Amr</title>
+<meta name="description" content="Case study: a serverless API built and torn down entirely with the AWS CLI. API Gateway, Lambda (Python) and DynamoDB, with a least-privilege role and a resource-based policy that prevents the confused-deputy problem.">
+<meta property="og:title" content="Project 3: Serverless Event-Driven API on AWS">
+<meta property="og:type" content="article">
+<meta name="theme-color" content="#090d18">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="nav">
+  <div class="container">
+    <a class="brand" href="../index.html"><span class="logo">A</span> Amr Khaled</a>
+    <button class="menu-btn" aria-expanded="false" aria-controls="nav-list">Menu</button>
+    <nav aria-label="Primary">
+      <ul id="nav-list">
+        <li><a href="../index.html#work">Projects</a></li>
+        <li><a href="../index.html#skills">Skills</a></li>
+        <li><a href="../index.html#journey">Journey</a></li>
+        <li><a href="../index.html#contact">Contact</a></li>
+        <li><a class="btn small" href="https://github.com/officialhunter2007-netizen">GitHub</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="page container">
+  <p class="crumbs"><a href="../index.html#work">Projects</a> / Project 03</p>
+  <div class="page-hero">
+    <h1>Serverless event-driven API</h1>
+    <p class="lead">An HTTP endpoint that accepts JSON and stores it in a database, with no servers, provisioned, tested and destroyed entirely from the command line.</p>
+    <ul class="tags"><li class="tag">API Gateway</li><li class="tag">Lambda (Python 3.12)</li><li class="tag">DynamoDB</li><li class="tag">IAM</li><li class="tag">AWS CLI</li><li class="tag">Bash</li></ul>
+    <dl class="meta">
+      <div><dt>Built</dt><dd>July 2026</dd></div>
+      <div><dt>Region</dt><dd>us-east-1</dd></div>
+      <div><dt>Tooling</dt><dd>AWS CloudShell + CLI</dd></div>
+      <div><dt>Write-up</dt><dd><a href="https://github.com/officialhunter2007-netizen/cloud-projects/blob/main/projects/Serverless%20Event-Driven%20API.md">cloud-projects</a></dd></div>
+    </dl>
+  </div>
+
+  <div class="prose">
+    <h2>The problem</h2>
+    <p>I wanted to see how a request becomes stored data on a fully managed stack, and to practise doing it without the console, so that every resource, permission and teardown step was explicit and scriptable.</p>
+
+    <h2>Architecture</h2>
+    <figure class="figure">
+      <img src="../assets/img/p3-architecture.png" width="1251" height="337" loading="lazy" alt="Diagram: a client sends an HTTP POST with JSON to Amazon API Gateway, which triggers an AWS Lambda function; the Lambda function writes to Amazon DynamoDB with PutItem, and an IAM execution role grants it dynamodb:PutItem.">
+      <figcaption>Client → API Gateway → Lambda → DynamoDB, with an IAM execution role granting the Lambda only the write it needs.</figcaption>
+    </figure>
+
+    <h2>How I built it</h2>
+    <ol>
+      <li>Created the <span class="inline-code">ContactMessages</span> DynamoDB table (partition key <span class="inline-code">MessageId</span>).</li>
+      <li>Created an execution role with the minimum permissions: write to that table and write logs.</li>
+      <li>Wrote the Lambda handler with <span class="inline-code">boto3</span>: parse the JSON body, generate a timestamp ID, <span class="inline-code">PutItem</span>. Zipped and deployed it with <span class="inline-code">aws lambda update-function-code</span>.</li>
+      <li>Created an HTTP API in API Gateway v2 and pointed it at the function.</li>
+      <li>Granted API Gateway permission to invoke the function, scoped to one API.</li>
+      <li>Tested with <span class="inline-code">curl</span>, verified the row with a DynamoDB <span class="inline-code">scan</span>, then ran a teardown script that removed every resource.</li>
+    </ol>
+<pre class="code"><span class="c"># Test request (API id and account removed)</span>
+$ curl -X POST https://&lt;api-id&gt;.execute-api.us-east-1.amazonaws.com \
+    -H <span class="s">"Content-Type: application/json"</span> \
+    -d '{"name": "Test", "message": "Hello from the CLI"}'
+<span class="s">"Success! Your message was saved by a Cloud Engineer."</span></pre>
+
+    <h2>Engineering decisions</h2>
+    <div class="decisions">
+      <div class="decision"><h3>Resource-based policy scoped to one API</h3><p>Creating an API does not authorise it to call Lambda. I used <span class="inline-code">aws lambda add-permission</span> with an explicit <span class="inline-code">--source-arn</span> (my account, region and API) so no other API Gateway can trigger the function, which prevents the confused-deputy problem.</p></div>
+      <div class="decision"><h3>Defensive input handling</h3><p>The handler checks for a missing <span class="inline-code">body</span> and returns <span class="inline-code">400 Bad Request</span> instead of crashing with a 500.</p></div>
+      <div class="decision"><h3>Scan now, query later</h3><p>A <span class="inline-code">scan</span> is fine for a tiny table; at real scale I would add a global secondary index and use <span class="inline-code">query</span> to keep reads cheap.</p></div>
+      <div class="decision"><h3>Teardown as a first-class step</h3><p>A script detaches the policy, deletes the role, API, function and table so the project leaves a zero cost footprint.</p></div>
+    </div>
+
+    <h2>Issues I hit and fixed</h2>
+    <ul class="issues">
+      <li><h3>Console blocked by local firewall</h3><p><b>Cause:</b> my network or antivirus blocked a CDN the Lambda console needed ("Failed to fetch").</p><p><b>Fix:</b> switched to AWS CloudShell, which runs inside AWS, and scripted everything in Bash.</p></li>
+      <li><h3>Handler crashed with <span class="inline-code">KeyError: 'body'</span></h3><p><b>Cause:</b> a browser sent a GET, which has no payload.</p><p><b>Fix:</b> validated the event and returned a clean 400, logging the raw event for debugging.</p></li>
+      <li><h3>DynamoDB rejected my query on <span class="inline-code">Name</span></h3><p><b>Cause:</b> <span class="inline-code">Name</span> is a reserved word.</p><p><b>Fix:</b> used expression attribute names and values (<span class="inline-code">#nameKey</span>, <span class="inline-code">:nameValue</span>), which also keeps data separate from the expression.</p></li>
+    </ul>
+
+    <h2>Limitations</h2>
+    <div class="callout warn">
+      <p>A self-directed lab: no authentication on the endpoint, no input schema validation beyond the body check, and no live endpoint is published. The CLI-only approach was deliberate for learning; the later projects replace it with Terraform.</p>
+    </div>
+  </div>
+
+  <nav class="pager" aria-label="Project navigation">
+    <a href="project-2.html"><small>← PREVIOUS</small>Project 2: VPC + EC2</a>
+    <a href="project-4.html" style="text-align:right"><small>NEXT →</small>Project 4: Fargate container</a>
+  </nav>
+</main>
+
+<footer class="container">© <span id="year">2026</span> Amr Khaled Abdelmawla Ahmed</footer>
+<script src="../assets/js/config.js"></script>
+<script src="../assets/js/main.js"></script>
+</body>
+</html>
