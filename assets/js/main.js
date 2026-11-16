@@ -19,6 +19,7 @@
   }
 
   var items = document.querySelectorAll(".reveal");
+  var revealAll = function () { items.forEach(function (el) { el.classList.add("in"); }); };
   if ("IntersectionObserver" in window) {
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (en) {
@@ -27,8 +28,11 @@
     }, { threshold: 0.12 });
     items.forEach(function (el) { io.observe(el); });
   } else {
-    items.forEach(function (el) { el.classList.add("in"); });
+    revealAll();
   }
+  /* Safety net: content must never stay hidden if the observer misbehaves. */
+  window.addEventListener("load", function () { setTimeout(revealAll, 1200); });
+  setTimeout(revealAll, 2500);
 
   /* Optional contact links from config.js (rendered only when filled in) */
   var cfg = window.SITE || {};

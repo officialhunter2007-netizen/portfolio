@@ -23,6 +23,7 @@
     <nav aria-label="Primary">
       <ul id="nav-list">
         <li><a href="#work">Projects</a></li>
+        <li><a href="#security">Security</a></li>
         <li><a href="#skills">Skills</a></li>
         <li><a href="#journey">Journey</a></li>
         <li><a href="#contact">Contact</a></li>
@@ -37,7 +38,10 @@
 <div class="container hero">
   <div class="hero-grid">
     <div>
-      <span class="eyebrow">Amr Khaled · Cloud &amp; DevOps Engineer</span>
+      <div class="hero-id">
+        <img class="avatar" src="assets/img/portrait.jpg" alt="Amr Khaled Abdelmawla Ahmed" width="96" height="96" onerror="this.remove()">
+        <span class="eyebrow">Amr Khaled &middot; Cloud &amp; DevOps Engineer</span>
+      </div>
       <h1>I build cloud platforms that <span class="grad">ship themselves</span>.</h1>
       <p class="lead">Seven hands-on AWS projects, each harder than the last: from a static S3 site to Terraform-managed infrastructure and Kubernetes GitOps with ArgoCD. Every project documents the architecture, the trade-offs I chose, and the real failures I debugged along the way.</p>
       <div class="cta">
@@ -60,9 +64,9 @@
 
   <div class="stats reveal" role="list">
     <div class="stat" role="listitem"><b>7</b><span>AWS projects built Jul–Sep 2026</span></div>
-    <div class="stat" role="listitem"><b>ECS + EKS</b><span>Two container orchestrators, Fargate on both</span></div>
+    <div class="stat" role="listitem"><b>SAA-C03</b><span>AWS Certified Solutions Architect, Nov 2026</span></div>
+    <div class="stat" role="listitem"><b>20</b><span>Security labs: forensics, AD, hardening</span></div>
     <div class="stat" role="listitem"><b>0</b><span>Static AWS keys in CI/CD (GitHub OIDC)</span></div>
-    <div class="stat" role="listitem"><b>Git → cluster</b><span>ArgoCD auto-sync with self-heal</span></div>
   </div>
 </div>
 
@@ -131,6 +135,50 @@
   </div>
 </section>
 
+<section id="security" class="container">
+  <div class="sec-head reveal">
+    <span class="kicker">Security foundations</span>
+    <h2>Before cloud, I learned how systems break</h2>
+    <p>Twenty hands-on security labs on Hack The Box: packet-level forensics, Active Directory attack and detection, and Windows hardening. They are the reason I scope IAM policies the way I do.</p>
+  </div>
+  <div class="grid three">
+    <div class="lab-card reveal">
+      <span class="count">8 investigations</span>
+      <h3>Network forensics</h3>
+      <ul>
+        <li><b>ARP spoofing</b> detected from duplicate IP-to-MAC mappings</li>
+        <li><b>DNS tunnelling</b> exfiltration found inside TXT records</li>
+        <li><b>TLS renegotiation</b> DoS and TCP scan detection</li>
+      </ul>
+    </div>
+    <div class="lab-card reveal">
+      <span class="count">8 exercises</span>
+      <h3>Active Directory</h3>
+      <ul>
+        <li><b>Kerberoasting</b> and DCSync, detected via event IDs 4769 and 4662</li>
+        <li><b>Golden Ticket</b> persistence and forged token logons</li>
+        <li><b>ACL abuse</b> (GenericAll) caught with a honeypot account</li>
+      </ul>
+    </div>
+    <div class="lab-card reveal">
+      <span class="count">Labs &amp; hardening</span>
+      <h3>Systems &amp; credentials</h3>
+      <ul>
+        <li><b>Least-privilege</b> NTFS and share permissions</li>
+        <li><b>Service auditing</b> with PowerShell</li>
+        <li><b>Brute-force</b> labs on SSH and WinRM, and what the logs reveal</li>
+      </ul>
+    </div>
+  </div>
+  <div class="why reveal">
+    <b>Why it matters for cloud:</b> stolen credentials and over-broad permissions cause most cloud breaches. Reading the logs of an attack, then designing IAM, OIDC trust policies and security groups that remove that path, is the same skill applied from the other side.
+  </div>
+  <div class="cta reveal" style="margin-top:22px">
+    <a class="btn" href="security.html">Full security lab index</a>
+    <a class="btn" href="https://github.com/officialhunter2007-netizen/Amr999">Security repository</a>
+  </div>
+</section>
+
 <section id="skills" class="container">
   <div class="sec-head reveal">
     <span class="kicker">Skills</span>
@@ -142,7 +190,7 @@
     <div class="skill reveal"><h3>Infrastructure as Code</h3><ul><li>Terraform (HCL), split by concern</li><li>Provider and lock-file hygiene</li><li>Plan-before-apply workflow</li><li>AWS CLI for scripted provisioning</li></ul></div>
     <div class="skill reveal"><h3>Containers &amp; Kubernetes</h3><ul><li>Docker, slim images, Gunicorn</li><li>Deployments, Services, Ingress, HPA, ConfigMaps</li><li>Liveness vs readiness probes</li><li>EKS on Fargate, AWS Load Balancer Controller</li></ul></div>
     <div class="skill reveal"><h3>CI/CD &amp; GitOps</h3><ul><li>GitHub Actions</li><li>ArgoCD (auto-sync, prune, self-heal)</li><li>Image tagging by commit SHA</li><li>Two-repo app/manifests pattern</li></ul></div>
-    <div class="skill reveal"><h3>Security</h3><ul><li>GitHub OIDC to AWS, no static keys</li><li>IRSA for pods</li><li>Least-privilege IAM, scoped resource policies</li><li>Trivy image scanning, immutable ECR tags</li></ul></div>
+    <div class="skill reveal"><h3>Security</h3><ul><li>GitHub OIDC to AWS, no static keys</li><li>IRSA for pods</li><li>Least-privilege IAM, scoped resource policies</li><li>Trivy image scanning, immutable ECR tags</li><li>Wireshark forensics, AD attack detection (Event IDs)</li></ul></div>
     <div class="skill reveal"><h3>Languages &amp; OS</h3><ul><li>Python (Flask, boto3, pytest, flake8)</li><li>Bash scripting</li><li>Linux administration over SSH</li><li>YAML, HCL, JSON</li></ul></div>
   </div>
 </section>
@@ -150,10 +198,11 @@
 <section id="journey" class="container">
   <div class="sec-head reveal">
     <span class="kicker">Learning path</span>
-    <h2>From console clicks to GitOps in three months</h2>
-    <p>These are self-directed projects, built deliberately in order: do it by hand first, then automate it, then make Git the source of truth.</p>
+    <h2>From packet captures to GitOps</h2>
+    <p>Self-directed work, built deliberately in order: understand how systems fail, then build them by hand, automate them, and finally let Git own the state.</p>
   </div>
   <ol class="timeline">
+        <li class="reveal"><time>2025 – 2026 · Hack The Box</time><h3>Security foundations first</h3><p>Network forensics, Active Directory attack and detection, and Windows hardening: 20 labs completed before touching cloud infrastructure.</p></li>
     <li class="reveal"><time>JUL 2026 · Projects 1–2</time><h3>Core networking and compute by hand</h3><p>S3 hosting, then a custom VPC with an internet gateway, route table and an EC2 web server.</p></li>
     <li class="reveal"><time>JUL 2026 · Projects 3–4</time><h3>Everything from the CLI</h3><p>Serverless API and a Fargate container, scripted with the AWS CLI to understand the underlying APIs and IAM before abstracting them away.</p></li>
     <li class="reveal"><time>JUL 2026 · Project 5</time><h3>Infrastructure as Code with Terraform</h3><p>A multi-AZ load-balanced web tier, declared and applied as code.</p></li>
