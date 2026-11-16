@@ -2,6 +2,6 @@
    Fill these in before publishing; nothing is shown for empty values. */
 window.SITE = {
   email: "7amr7ahmed7@gmail.com",
-  linkedin: "https://www.linkedin.com/in/amr-ahmed-36a090450",
+  linkedin: "https://www.linkedin.com/in/amr-khaled-engineer",
   cv: "assets/Amr-Khaled-Cloud-DevOps-Engineer.pdf"
 };
