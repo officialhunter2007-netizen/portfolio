@@ -4,6 +4,6 @@
 window.SITE = {
   email: "7amr7ahmed7@gmail.com",
   linkedin: "https://www.linkedin.com/in/amr-khaled-engineer",
-  whatsapp: "",
+  whatsapp: "967782541903",
   cv: "assets/Amr-Khaled-Cloud-DevOps-Engineer.pdf"
 };
