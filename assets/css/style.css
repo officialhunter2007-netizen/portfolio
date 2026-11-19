@@ -325,3 +325,23 @@ pre.code .k { color: var(--accent-2); } pre.code .s { color: var(--good); } pre.
   .cert-actions .btn { flex: 1 1 auto; text-align: center; }
   .cert-badge { width: 84px; height: 96px; }
 }
+
+/* ===== Bismillah header ===== */
+.bismillah {
+  display: flex; align-items: center; justify-content: center; gap: 22px;
+  padding: 18px 20px 8px;
+  font-family: "Sakkal Majalla", "Traditional Arabic", "Segoe UI", Tahoma, sans-serif;
+  font-size: 1.62rem; line-height: 1.35; font-weight: 500;
+  color: #e2c692;
+  text-shadow: 0 0 18px rgba(220,191,138,.22);
+}
+.bismillah span { direction: rtl; }
+.bismillah::before, .bismillah::after {
+  content: ""; height: 1px; width: min(130px, 16vw); flex: none;
+  background: linear-gradient(90deg, transparent, rgba(220,191,138,.5));
+}
+.bismillah::after { background: linear-gradient(270deg, transparent, rgba(220,191,138,.5)); }
+@media (max-width: 720px) {
+  .bismillah { font-size: 1.32rem; gap: 12px; padding: 12px 14px 4px; }
+  .bismillah::before, .bismillah::after { width: 40px; }
+}
