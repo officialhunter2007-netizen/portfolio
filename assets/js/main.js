@@ -34,18 +34,6 @@
   window.addEventListener("load", function () { setTimeout(revealAll, 1200); });
   setTimeout(revealAll, 2500);
 
-  /* Optional contact links from config.js (rendered only when filled in) */
-  var cfg = window.SITE || {};
-  document.querySelectorAll("[data-contact]").forEach(function (box) {
-    if (cfg.email) box.insertAdjacentHTML("beforeend", '<a class="btn primary" href="mailto:' + encodeURI(cfg.email) + '">Email me</a>');
-    if (cfg.whatsapp) {
-      var digits = String(cfg.whatsapp).replace(/\D/g, "");
-      if (digits) box.insertAdjacentHTML("beforeend", '<a class="btn" href="https://wa.me/' + digits + '" target="_blank" rel="noopener">WhatsApp</a>');
-    }
-    if (cfg.linkedin) box.insertAdjacentHTML("beforeend", '<a class="btn" href="' + encodeURI(cfg.linkedin) + '" rel="noopener">LinkedIn</a>');
-    if (cfg.cv) box.insertAdjacentHTML("beforeend", '<a class="btn" href="' + encodeURI(cfg.cv) + '">Download CV</a>');
-  });
-
   var y = document.getElementById("year");
   if (y) y.textContent = new Date().getFullYear();
 })();
